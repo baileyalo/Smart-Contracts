@@ -1,0 +1,113 @@
+//SPDX-License-Identifier: Unlicense
+pragma solidity 0.8.10;
+ 
+//import "hardhat/console.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+ 
+contract Stadium is ERC721{
+    //0xdD870fA1b7C4700F2BD7f44238821C26f7392148
+    //0xa131AD247055FD2e2aA8b156A11bdEc81b9eAD95
+    uint256 public TicketPrice;
+    string SportName;
+    mapping (address => uint256[]) public TokenList;
+    using Counters for Counters.Counter; 
+    Counters.Counter private _tokenIds;
+    address public owner;
+    uint public length;
+    string public Name; 
+    uint256 public Capacity;
+    enum Status{ INITIATED, STARTED, COMPLETED }
+    Status public status;
+    bool SportStatus;
+ 
+   
+    constructor(string memory _name, uint256 _capacity, string memory symbol) ERC721(_name, symbol){
+        Name = _name;
+        Capacity = _capacity;
+        owner = msg.sender;
+        //totalSupply = _capacity;
+        status = Status.INITIATED;
+    } 
+ 
+    receive () external payable{
+    }
+ 
+    modifier ownerOnly() {
+        require(msg.sender == owner,"Only Owner can perform this task");
+        _; 
+    }
+ 
+    modifier CheckSportStatus() {
+        require(SportStatus,"Need to setup Sport before Starting ticking");
+        _; 
+    }
+    
+    function startTicking() public ownerOnly CheckSportStatus{
+          status = Status.STARTED;
+    }
+    function completeTicking() public ownerOnly {
+          status = Status.COMPLETED;
+          SportStatus = false;
+    }
+ 
+    function setSport( string memory  _name, uint256 _price) public ownerOnly{
+        SportName = _name;
+        TicketPrice = _price;
+        SportStatus = true;
+    }
+ 
+    function mintmytoken() public returns(uint256){
+        //require(totalSupply() <= Capacity,"");
+        _tokenIds.increment();
+        uint256 newItemId = _tokenIds.current();
+        TokenList[msg.sender].push(newItemId);        
+        _mint(msg.sender, newItemId);
+        length = balanceOf(msg.sender);
+        return newItemId;
+    }
+    
+}
+ 
+contract Person {
+    
+    struct  Token {
+        //uint256  Date;
+        //uint256  Time;
+        uint256  ID;
+        address  Owner;
+        string  StadiumName;
+        string  SportName;
+    }
+    
+ 
+    
+ 
+    mapping (uint256 => Token) TokenDetails;
+    Stadium private stadium;
+    string private Name;
+    uint256 private Age;
+ 
+    constructor(address payable _statiumAddress, string memory _name, uint8 _age){
+        stadium = Stadium(_statiumAddress);
+        Name = _name;
+        Age = _age;
+    }
+ 
+    modifier checkTicketPrice() {
+        require(stadium.TicketPrice() <= msg.value, "Ticket price is more!!");
+        _; 
+    }
+ 
+    function purchaseToken(string memory _sport, string memory _stadium) public payable checkTicketPrice returns(uint256){
+        uint256 tokenID = stadium.mintmytoken();
+        TokenDetails[tokenID].StadiumName = _stadium;
+        TokenDetails[tokenID].SportName = _sport;
+        TokenDetails[tokenID].ID = tokenID;
+        TokenDetails[tokenID].Owner = msg.sender;
+    }
+ 
+    function gettokendetails(uint256 _id) public view returns ( Token memory){
+        return TokenDetails[_id];
+    }
+}
