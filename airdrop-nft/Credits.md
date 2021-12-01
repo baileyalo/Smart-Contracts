@@ -1,0 +1,1 @@
+* [How to airdrop NFTs](https://www.chainshot.com/article/how-to-airdrop-nfts)
